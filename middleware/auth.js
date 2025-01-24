@@ -1,23 +1,23 @@
-const jwt=require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
 
-const verifyToken=async(req,res,next)=>{
-    let token=req.headers["authorization"]
+const verifyToken = (req, res, next) => {
+    const authHeader = req.headers["authorization"];
 
-    if(token){
-        token=token.split(" ")[1]
-        jwt.verify(token,process.env.SECRET_KEY,(err,decoded)=>{
-            if(err){
-                return res.status(400).json({message:"Invalid token"})
-            }
-            else{
-                console.log(decoded)
-                req.user=decoded
-            }
-        })
-        next()
+    if (!authHeader) {
+        return res.status(401).json({ message: "No token provided. Authorization denied." });
     }
-    else{
-        return res.status(400).json({message:"Invalid token"})
-    }
-}
-module.exports=verifyToken
+
+    const token = authHeader.split(" ")[1]; // Extract the token after 'Bearer'
+
+    jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+        if (err) {
+            return res.status(403).json({ message: "Invalid or expired token." });
+        }
+
+        // Attach the decoded user information to the request object
+        req.user = decoded;
+        next(); // Proceed to the next middleware or route handler
+    });
+};
+
+module.exports = verifyToken;
